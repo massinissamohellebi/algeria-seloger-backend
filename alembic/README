@@ -1,0 +1,11 @@
+Async Alembic environment for algeria-seloger-backend.
+
+Generate a migration (review the output manually before committing):
+
+    alembic revision --autogenerate -m "describe change"
+
+Apply migrations:
+
+    alembic upgrade head
+
+env.py imports Base and app.models so autogenerate sees all tables.
