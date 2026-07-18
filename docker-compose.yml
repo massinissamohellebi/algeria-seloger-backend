@@ -1,0 +1,82 @@
+# Backend stack: Traefik + PostgreSQL + Adminer + API
+# Network: seloger-network (external, shared with frontend)
+#
+# First-time setup:
+#   docker network create seloger-network
+#   docker compose up -d
+
+services:
+  traefik:
+    image: traefik:v2.11
+    container_name: seloger-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - seloger-network
+
+  db:
+    image: postgres:17-alpine
+    container_name: seloger-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-algeria}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-algeria}
+      POSTGRES_DB: ${POSTGRES_DB:-algeria_seloger}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-algeria} -d ${POSTGRES_DB:-algeria_seloger}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - seloger-network
+    labels:
+      - "traefik.enable=false"
+
+  adminer:
+    image: adminer:latest
+    container_name: seloger-adminer
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.adminer.rule=Host(`${ADMINER_HOST:-adminer.localhost}`)"
+      - "traefik.http.routers.adminer.entrypoints=web"
+      - "traefik.http.services.adminer.loadbalancer.server.port=8080"
+      - "traefik.docker.network=seloger-network"
+    networks:
+      - seloger-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seloger-backend
+    env_file:
+      - .env
+    volumes:
+      - ./alembic/versions:/app/alembic/versions
+    depends_on:
+      db:
+        condition: service_healthy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.rule=Host(`${API_HOST:-api.localhost}`)"
+      - "traefik.http.routers.api.entrypoints=web"
+      - "traefik.http.services.api.loadbalancer.server.port=8000"
+      - "traefik.docker.network=seloger-network"
+    networks:
+      - seloger-network
+
+networks:
+  seloger-network:
+    external: true

@@ -22,6 +22,9 @@ htmlcov/
 *.sqlite3
 *.db
 
+# Local postgres data (bind mount)
+data/
+
 .DS_Store
 .idea/
 .vscode/
