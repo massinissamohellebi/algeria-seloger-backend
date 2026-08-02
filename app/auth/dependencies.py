@@ -8,8 +8,10 @@ from app.auth.models import User
 from app.auth.repository import UserRepository
 from app.auth.service import AuthService
 from app.core.database import get_db
+from app.core.exceptions import AppError
 
 bearer_scheme = HTTPBearer(auto_error=True)
+optional_bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_auth_service(
@@ -25,4 +27,24 @@ async def get_current_user(
     return await service.get_current_user(credentials.credentials)
 
 
+async def get_current_user_optional(
+    credentials: Annotated[
+        HTTPAuthorizationCredentials | None, Depends(optional_bearer_scheme)
+    ],
+    service: Annotated[AuthService, Depends(get_auth_service)],
+) -> User | None:
+    """Return the authenticated user if a valid token is present, else None.
+
+    Used by public endpoints that reveal extra data to the owner (e.g. their
+    own non-published listings) without requiring authentication.
+    """
+    if credentials is None:
+        return None
+    try:
+        return await service.get_current_user(credentials.credentials)
+    except AppError:
+        return None
+
+
 CurrentUser = Annotated[User, Depends(get_current_user)]
+OptionalCurrentUser = Annotated[User | None, Depends(get_current_user_optional)]
