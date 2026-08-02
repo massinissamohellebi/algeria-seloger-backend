@@ -169,6 +169,22 @@ async def test_pagination(client):
 
 
 @pytest.mark.asyncio
+async def test_contact_fields_round_trip(client):
+    headers = await auth_headers(client)
+    body = await create_listing(
+        client,
+        headers,
+        contact_name="Mohamed Cherif",
+        contact_phone="+213555123456",
+    )
+    assert body["contact_name"] == "Mohamed Cherif"
+    assert body["contact_phone"] == "+213555123456"
+
+    detail = await client.get(f"/listings/{body['id']}", headers=headers)
+    assert detail.json()["contact_phone"] == "+213555123456"
+
+
+@pytest.mark.asyncio
 async def test_list_mine_includes_drafts(client):
     owner = await auth_headers(client, "owner@example.com")
     other = await auth_headers(client, "other@example.com")

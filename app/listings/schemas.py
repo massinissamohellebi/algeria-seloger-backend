@@ -49,6 +49,8 @@ class ListingBase(BaseModel):
     address: str | None = Field(default=None, max_length=255)
     lat: float | None = None
     lng: float | None = None
+    contact_name: str | None = Field(default=None, max_length=255)
+    contact_phone: str | None = Field(default=None, max_length=32)
 
 
 class ListingCreate(ListingBase):
@@ -77,6 +79,8 @@ class ListingUpdate(BaseModel):
     address: str | None = Field(default=None, max_length=255)
     lat: float | None = None
     lng: float | None = None
+    contact_name: str | None = Field(default=None, max_length=255)
+    contact_phone: str | None = Field(default=None, max_length=32)
 
 
 class ListingRead(ListingBase):

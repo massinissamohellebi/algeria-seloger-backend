@@ -95,6 +95,9 @@ class Listing(Base):
     lat: Mapped[float | None] = mapped_column(Float, nullable=True)
     lng: Mapped[float | None] = mapped_column(Float, nullable=True)
 
+    contact_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    contact_phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     status: Mapped[ListingStatus] = mapped_column(
         Enum(ListingStatus, name="listing_status"),
         default=ListingStatus.draft,
