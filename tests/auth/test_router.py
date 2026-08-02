@@ -54,9 +54,7 @@ async def test_me_without_token_returns_401(client):
 
 @pytest.mark.asyncio
 async def test_me_with_invalid_token_returns_401(client):
-    resp = await client.get(
-        "/auth/me", headers={"Authorization": "Bearer garbage"}
-    )
+    resp = await client.get("/auth/me", headers={"Authorization": "Bearer garbage"})
     assert resp.status_code == 401
 
 

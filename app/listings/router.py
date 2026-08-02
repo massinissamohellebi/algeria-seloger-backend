@@ -1,12 +1,12 @@
 import uuid
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, OptionalCurrentUser
 from app.core.database import get_db
-from app.listings.dependencies import get_listing_service
+from app.listings.dependencies import get_listing_service, get_photo_service
 from app.listings.models import PropertyType, TransactionType
 from app.listings.repository import ListingFilters
 from app.listings.schemas import (
@@ -15,13 +15,15 @@ from app.listings.schemas import (
     ListingRead,
     ListingSummary,
     ListingUpdate,
+    PhotoRead,
     SortOption,
 )
-from app.listings.service import ListingService
+from app.listings.service import ListingService, PhotoService
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
 ServiceDep = Annotated[ListingService, Depends(get_listing_service)]
+PhotoServiceDep = Annotated[PhotoService, Depends(get_photo_service)]
 SessionDep = Annotated[AsyncSession, Depends(get_db)]
 
 
@@ -115,3 +117,38 @@ async def publish_listing(
     listing = await service.publish_listing(listing_id, current_user)
     await session.commit()
     return ListingRead.model_validate(listing)
+
+
+@router.post(
+    "/{listing_id}/photos",
+    response_model=PhotoRead,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_photo(
+    listing_id: uuid.UUID,
+    current_user: CurrentUser,
+    service: PhotoServiceDep,
+    session: SessionDep,
+    file: Annotated[UploadFile, File()],
+) -> PhotoRead:
+    data = await file.read()
+    photo = await service.add_photo(
+        listing_id, current_user, data=data, content_type=file.content_type
+    )
+    await session.commit()
+    return PhotoRead.model_validate(photo)
+
+
+@router.delete(
+    "/{listing_id}/photos/{photo_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_photo(
+    listing_id: uuid.UUID,
+    photo_id: uuid.UUID,
+    current_user: CurrentUser,
+    service: PhotoServiceDep,
+    session: SessionDep,
+) -> None:
+    await service.delete_photo(listing_id, current_user, photo_id)
+    await session.commit()

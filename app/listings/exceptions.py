@@ -1,9 +1,30 @@
-from app.core.exceptions import ConflictError, ForbiddenError, NotFoundError
+from app.core.exceptions import (
+    AppError,
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+)
 
 
 class ListingNotFoundError(NotFoundError):
     code = "listing_not_found"
     message = "Listing not found."
+
+
+class PhotoNotFoundError(NotFoundError):
+    code = "photo_not_found"
+    message = "Photo not found."
+
+
+class MaxPhotosReachedError(ConflictError):
+    code = "max_photos_reached"
+    message = "This listing already has the maximum number of photos."
+
+
+class InvalidPhotoError(AppError):
+    status_code = 422
+    code = "invalid_photo"
+    message = "The uploaded file is not a valid image."
 
 
 class NotListingOwnerError(ForbiddenError):

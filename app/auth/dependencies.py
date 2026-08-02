@@ -28,9 +28,7 @@ async def get_current_user(
 
 
 async def get_current_user_optional(
-    credentials: Annotated[
-        HTTPAuthorizationCredentials | None, Depends(optional_bearer_scheme)
-    ],
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(optional_bearer_scheme)],
     service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> User | None:
     """Return the authenticated user if a valid token is present, else None.

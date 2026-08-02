@@ -31,6 +31,18 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])
 
+    # Object storage (S3). When s3_bucket is empty, an in-memory backend is used
+    # (dev/tests). Photo upload limits below are enforced server-side.
+    s3_bucket: str = ""
+    s3_region: str = "us-east-1"
+    s3_endpoint_url: str | None = None
+    s3_access_key_id: str | None = None
+    s3_secret_access_key: str | None = None
+    s3_public_base_url: str | None = None
+
+    max_photo_size_bytes: int = 5 * 1024 * 1024
+    max_photos_per_listing: int = 20
+
 
 @lru_cache
 def get_settings() -> Settings:

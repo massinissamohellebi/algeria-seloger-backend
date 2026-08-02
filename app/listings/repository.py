@@ -5,7 +5,13 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.listings.models import Listing, ListingStatus, PropertyType, TransactionType
+from app.listings.models import (
+    Listing,
+    ListingPhoto,
+    ListingStatus,
+    PropertyType,
+    TransactionType,
+)
 from app.listings.schemas import SortOption
 
 
@@ -58,6 +64,54 @@ class ListingRepository:
             .order_by(Listing.created_at.desc())
         )
         return list(result.scalars().all())
+
+    # --- photos ---------------------------------------------------------
+
+    async def count_photos(self, listing_id: uuid.UUID) -> int:
+        stmt = (
+            select(func.count())
+            .select_from(ListingPhoto)
+            .where(ListingPhoto.listing_id == listing_id)
+        )
+        return (await self.session.execute(stmt)).scalar_one()
+
+    async def add_photo(
+        self, *, listing_id: uuid.UUID, url: str, position: int, is_cover: bool
+    ) -> ListingPhoto:
+        photo = ListingPhoto(listing_id=listing_id, url=url, position=position, is_cover=is_cover)
+        self.session.add(photo)
+        await self.session.flush()
+        await self.session.refresh(photo)
+        return photo
+
+    async def get_photo(self, listing_id: uuid.UUID, photo_id: uuid.UUID) -> ListingPhoto | None:
+        stmt = select(ListingPhoto).where(
+            ListingPhoto.id == photo_id,
+            ListingPhoto.listing_id == listing_id,
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
+
+    async def list_photos(self, listing_id: uuid.UUID) -> list[ListingPhoto]:
+        stmt = (
+            select(ListingPhoto)
+            .where(ListingPhoto.listing_id == listing_id)
+            .order_by(ListingPhoto.position)
+        )
+        return list((await self.session.execute(stmt)).scalars().all())
+
+    async def delete_photo(self, photo: ListingPhoto) -> None:
+        await self.session.delete(photo)
+        await self.session.flush()
+
+    async def resequence_photos(self, listing_id: uuid.UUID) -> None:
+        """Re-number remaining photos 0..n and keep the first one as cover."""
+        photos = await self.list_photos(listing_id)
+        for index, photo in enumerate(photos):
+            photo.position = index
+            photo.is_cover = index == 0
+        await self.session.flush()
+
+    # --- filtering ------------------------------------------------------
 
     def _apply_filters(self, stmt, filters: ListingFilters):
         stmt = stmt.where(Listing.status == ListingStatus.published)
