@@ -1,3 +1,5 @@
+import uuid
+
 from app.auth.exceptions import (
     EmailAlreadyExistsError,
     InactiveUserError,
@@ -55,7 +57,7 @@ class AuthService:
         return user
 
 
-def _extract_subject(token: str) -> int:
+def _extract_subject(token: str) -> uuid.UUID:
     try:
         payload = decode_access_token(token)
     except JWTError as exc:
@@ -64,6 +66,6 @@ def _extract_subject(token: str) -> int:
     if subject is None:
         raise InvalidTokenError()
     try:
-        return int(subject)
+        return uuid.UUID(str(subject))
     except (TypeError, ValueError) as exc:
         raise InvalidTokenError() from exc
