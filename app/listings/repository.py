@@ -161,3 +161,23 @@ class ListingRepository:
         stmt = stmt.offset((page - 1) * size).limit(size)
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total
+
+    async def list_all(
+        self, status: ListingStatus | None, page: int, size: int
+    ) -> tuple[list[Listing], int]:
+        """Admin listing: every status, optionally filtered by one status."""
+        stmt = select(Listing)
+        count_stmt = select(func.count()).select_from(Listing)
+        if status is not None:
+            stmt = stmt.where(Listing.status == status)
+            count_stmt = count_stmt.where(Listing.status == status)
+
+        total = (await self.session.execute(count_stmt)).scalar_one()
+        stmt = (
+            stmt.order_by(Listing.created_at.desc())
+            .options(selectinload(Listing.photos))
+            .offset((page - 1) * size)
+            .limit(size)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all()), total

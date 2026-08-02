@@ -23,6 +23,12 @@ from app.listings.schemas import (
     SortOption,
 )
 
+_ADMIN_SETTABLE_STATUSES = {
+    ListingStatus.published,
+    ListingStatus.moderated,
+    ListingStatus.archived,
+}
+
 
 def _cover_url(photos: list[ListingPhoto]) -> str | None:
     if not photos:
@@ -108,6 +114,29 @@ class ListingService:
     async def list_mine(self, owner: User) -> list[ListingSummary]:
         listings = await self.repository.list_by_owner(owner.id)
         return [_to_summary(item) for item in listings]
+
+    # --- admin / moderation --------------------------------------------
+
+    async def set_status(self, listing_id: uuid.UUID, new_status: ListingStatus) -> Listing:
+        if new_status not in _ADMIN_SETTABLE_STATUSES:
+            raise InvalidStatusTransitionError(f"Admins cannot set status to '{new_status}'.")
+        listing = await self.repository.get_by_id(listing_id)
+        if listing is None:
+            raise ListingNotFoundError()
+        listing.status = new_status
+        if new_status == ListingStatus.published and listing.published_at is None:
+            listing.published_at = datetime.now(UTC)
+        return await self.repository.update(listing, {})
+
+    async def list_all(self, status: ListingStatus | None, page: int, size: int) -> ListingPage:
+        listings, total = await self.repository.list_all(status, page, size)
+        return ListingPage(
+            items=[_to_summary(item) for item in listings],
+            total=total,
+            page=page,
+            size=size,
+            pages=math.ceil(total / size) if size else 0,
+        )
 
 
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}

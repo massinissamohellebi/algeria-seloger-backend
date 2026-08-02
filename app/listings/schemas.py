@@ -5,6 +5,7 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.listings.models import (
+    ListingStatus,
     PriceUnit,
     PropertyType,
     TransactionType,
@@ -119,3 +120,7 @@ class ListingPage(BaseModel):
     page: int
     size: int
     pages: int
+
+
+class AdminStatusUpdate(BaseModel):
+    status: ListingStatus

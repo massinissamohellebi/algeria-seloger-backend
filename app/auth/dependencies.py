@@ -8,7 +8,7 @@ from app.auth.models import User
 from app.auth.repository import UserRepository
 from app.auth.service import AuthService
 from app.core.database import get_db
-from app.core.exceptions import AppError
+from app.core.exceptions import AppError, ForbiddenError
 
 bearer_scheme = HTTPBearer(auto_error=True)
 optional_bearer_scheme = HTTPBearer(auto_error=False)
@@ -46,3 +46,14 @@ async def get_current_user_optional(
 
 CurrentUser = Annotated[User, Depends(get_current_user)]
 OptionalCurrentUser = Annotated[User | None, Depends(get_current_user_optional)]
+
+
+async def get_current_admin(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    if not current_user.is_admin:
+        raise ForbiddenError("Admin privileges are required for this action.")
+    return current_user
+
+
+AdminUser = Annotated[User, Depends(get_current_admin)]
