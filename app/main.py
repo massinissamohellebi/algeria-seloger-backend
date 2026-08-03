@@ -13,6 +13,7 @@ from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.listings.admin import router as admin_listings_router
 from app.listings.router import router as listings_router
+from app.wilaya.router import router as wilayas_router
 
 configure_logging("DEBUG" if settings.debug else "INFO")
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
     app.include_router(auth_router)
     app.include_router(listings_router)
     app.include_router(admin_listings_router)
+    app.include_router(wilayas_router)
 
     @app.get("/health", tags=["ops"])
     async def health() -> dict[str, str]:

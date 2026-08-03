@@ -12,3 +12,4 @@ from app.listings.models import (  # noqa: F401
     PropertyType,
     TransactionType,
 )
+from app.wilaya.models import Wilaya  # noqa: F401
