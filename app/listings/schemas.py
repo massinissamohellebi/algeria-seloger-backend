@@ -14,6 +14,10 @@ from app.listings.models import (
 
 class SortOption(enum.StrEnum):
     newest = "newest"
+    # Spec alias for the default recency sort (published_at desc). Kept alongside
+    # `newest` so the existing frontend contract (`newest`) is not broken while
+    # accepting the spec's canonical `date_desc` value too.
+    date_desc = "date_desc"
     price_asc = "price_asc"
     price_desc = "price_desc"
     surface_asc = "surface_asc"
