@@ -27,8 +27,6 @@ async def test_get_by_email_missing_returns_none(db_session):
 @pytest.mark.asyncio
 async def test_get_by_id(db_session):
     repo = UserRepository(db_session)
-    created = await repo.create(
-        email="karim@example.com", hashed_password="hashed", full_name=None
-    )
+    created = await repo.create(email="karim@example.com", hashed_password="hashed", full_name=None)
     await db_session.commit()
     assert (await repo.get_by_id(created.id)).email == "karim@example.com"

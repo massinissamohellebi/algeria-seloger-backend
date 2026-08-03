@@ -13,7 +13,11 @@ dependencies = [
     "pydantic-settings>=2.6.0",
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
+    # passlib 1.7.4 breaks with bcrypt >= 4.1 (removed __about__ and rejects the
+    # >72-byte probe password). Pin to the last compatible 4.0.x release.
+    "bcrypt>=4.0.1,<4.1",
     "python-multipart>=0.0.12",
+    "boto3>=1.35.0",
 ]
 
 [project.optional-dependencies]

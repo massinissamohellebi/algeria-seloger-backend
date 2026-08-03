@@ -45,16 +45,16 @@ async def test_login_invalid_credentials_returns_401(client, user_payload):
 
 
 @pytest.mark.asyncio
-async def test_me_without_token_returns_403(client):
+async def test_me_without_token_returns_401(client):
+    # Missing credentials is unauthenticated (401), consistent with an invalid
+    # token below. Current Starlette HTTPBearer returns 401 for a missing header.
     resp = await client.get("/auth/me")
-    assert resp.status_code == 403
+    assert resp.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_me_with_invalid_token_returns_401(client):
-    resp = await client.get(
-        "/auth/me", headers={"Authorization": "Bearer garbage"}
-    )
+    resp = await client.get("/auth/me", headers={"Authorization": "Bearer garbage"})
     assert resp.status_code == 401
 
 

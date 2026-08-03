@@ -4,3 +4,11 @@ Import every feature's models here as new features are added.
 """
 
 from app.auth.models import User  # noqa: F401
+from app.listings.models import (  # noqa: F401
+    Listing,
+    ListingPhoto,
+    ListingStatus,
+    PriceUnit,
+    PropertyType,
+    TransactionType,
+)

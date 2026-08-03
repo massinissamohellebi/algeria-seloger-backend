@@ -36,9 +36,7 @@ async def test_register_duplicate_email_raises(service, db_session):
 
 @pytest.mark.asyncio
 async def test_login_success_returns_token(service, db_session):
-    await service.register(
-        UserCreate(email="log@example.com", password="password123")
-    )
+    await service.register(UserCreate(email="log@example.com", password="password123"))
     await db_session.commit()
     token = await service.login("log@example.com", "password123")
     assert token.access_token
@@ -47,9 +45,7 @@ async def test_login_success_returns_token(service, db_session):
 
 @pytest.mark.asyncio
 async def test_login_wrong_password_raises(service, db_session):
-    await service.register(
-        UserCreate(email="log2@example.com", password="password123")
-    )
+    await service.register(UserCreate(email="log2@example.com", password="password123"))
     await db_session.commit()
     with pytest.raises(InvalidCredentialsError):
         await service.login("log2@example.com", "wrongpass123")
@@ -57,9 +53,7 @@ async def test_login_wrong_password_raises(service, db_session):
 
 @pytest.mark.asyncio
 async def test_get_current_user_roundtrip(service, db_session):
-    await service.register(
-        UserCreate(email="cur@example.com", password="password123")
-    )
+    await service.register(UserCreate(email="cur@example.com", password="password123"))
     await db_session.commit()
     token = await service.login("cur@example.com", "password123")
     user = await service.get_current_user(token.access_token)
