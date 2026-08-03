@@ -30,6 +30,7 @@ SessionDep = Annotated[AsyncSession, Depends(get_db)]
 @router.get("", response_model=ListingPage)
 async def list_listings(
     service: ServiceDep,
+    q: Annotated[str | None, Query(max_length=200)] = None,
     transaction_type: TransactionType | None = None,
     property_type: PropertyType | None = None,
     wilaya: str | None = None,
@@ -49,6 +50,7 @@ async def list_listings(
         price_max=price_max,
         furnished=furnished,
         rooms=rooms,
+        q=q.strip() if q and q.strip() else None,
     )
     return await service.list_published(filters, sort, page, size)
 

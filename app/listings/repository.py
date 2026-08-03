@@ -1,9 +1,10 @@
 import uuid
 from dataclasses import dataclass
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
+from sqlalchemy.sql.elements import ColumnElement
 
 from app.listings.models import (
     Listing,
@@ -24,6 +25,7 @@ class ListingFilters:
     price_max: int | None = None
     furnished: bool | None = None
     rooms: int | None = None
+    q: str | None = None
 
 
 class ListingRepository:
@@ -113,6 +115,27 @@ class ListingRepository:
 
     # --- filtering ------------------------------------------------------
 
+    @property
+    def _dialect(self) -> str:
+        """Dialect name of the bound engine (e.g. 'postgresql', 'sqlite')."""
+        return self.session.bind.dialect.name
+
+    def _fulltext_clause(self, q: str) -> ColumnElement[bool]:
+        """Build a parameterised full-text WHERE clause for the given query.
+
+        On PostgreSQL this uses the migration-managed ``search_vector`` tsvector
+        column with ``websearch_to_tsquery('french', :q)``. On any other dialect
+        (SQLite in the test suite) it falls back to a parameterised ``LIKE`` over
+        ``title || ' ' || description``. Both bind ``q`` as a parameter — never
+        interpolated into SQL — so malicious input cannot inject.
+        """
+        if self._dialect == "postgresql":
+            return text("search_vector @@ websearch_to_tsquery('french', :q)").bindparams(q=q)
+        pattern = f"%{q.lower()}%"
+        return text("lower(title || ' ' || coalesce(description, '')) LIKE :pattern").bindparams(
+            pattern=pattern
+        )
+
     def _apply_filters(self, stmt, filters: ListingFilters):
         stmt = stmt.where(Listing.status == ListingStatus.published)
         if filters.transaction_type is not None:
@@ -129,6 +152,8 @@ class ListingRepository:
             stmt = stmt.where(Listing.furnished == filters.furnished)
         if filters.rooms is not None:
             stmt = stmt.where(Listing.rooms >= filters.rooms)
+        if filters.q:
+            stmt = stmt.where(self._fulltext_clause(filters.q))
         return stmt
 
     @staticmethod
@@ -145,6 +170,21 @@ class ListingRepository:
             case _:  # newest
                 return stmt.order_by(Listing.published_at.desc(), Listing.created_at.desc())
 
+    def _apply_ranked_sort(self, stmt, filters: ListingFilters):
+        """Order full-text results by ts_rank desc (Postgres only), then recency.
+
+        Only applied when a keyword query is present and the caller kept the
+        default sort. On PostgreSQL relevance ranking uses the same parameterised
+        ``websearch_to_tsquery``. Any explicit sort takes precedence and is left
+        untouched by returning ``None`` here.
+        """
+        if not filters.q or self._dialect != "postgresql":
+            return None
+        rank = text("ts_rank(search_vector, websearch_to_tsquery('french', :q))").bindparams(
+            q=filters.q
+        )
+        return stmt.order_by(rank.desc(), Listing.published_at.desc(), Listing.created_at.desc())
+
     async def list_published(
         self,
         filters: ListingFilters,
@@ -157,7 +197,9 @@ class ListingRepository:
         count_stmt = self._apply_filters(select(func.count()).select_from(Listing), filters)
         total = (await self.session.execute(count_stmt)).scalar_one()
 
-        stmt = self._apply_sort(base, sort).options(selectinload(Listing.photos))
+        ranked = self._apply_ranked_sort(base, filters) if sort == SortOption.newest else None
+        stmt = ranked if ranked is not None else self._apply_sort(base, sort)
+        stmt = stmt.options(selectinload(Listing.photos))
         stmt = stmt.offset((page - 1) * size).limit(size)
         result = await self.session.execute(stmt)
         return list(result.scalars().all()), total

@@ -1,9 +1,9 @@
 # ADR-0004 — PostgreSQL Full-Text Search via Trigger-Maintained tsvector Column
 
-- **Status**: Accepted
+- **Status**: Superseded by ADR-0006
 - **Date**: 2026-07-17
 - **Deciders**: Massinissa Mohellebi
-- **Refs**: Recherche S1 (API recherche full-text + tsvector migration)
+- **Refs**: Recherche S1 (API recherche full-text + tsvector migration); superseded by ADR-0006 (GENERATED STORED column chosen for V1)
 
 ## Context
 
