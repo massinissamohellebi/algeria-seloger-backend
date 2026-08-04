@@ -130,5 +130,20 @@ class ListingPage(BaseModel):
     pages: int
 
 
+class AdminListingSummary(ListingSummary):
+    """Listing summary enriched with owner info for the moderation panel."""
+
+    owner_name: str | None = None
+    owner_email: str | None = None
+
+
+class AdminListingPage(BaseModel):
+    items: list[AdminListingSummary]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
 class AdminStatusUpdate(BaseModel):
     status: ListingStatus

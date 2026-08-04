@@ -254,7 +254,7 @@ class ListingRepository:
         total = (await self.session.execute(count_stmt)).scalar_one()
         stmt = (
             stmt.order_by(Listing.created_at.desc())
-            .options(selectinload(Listing.photos))
+            .options(selectinload(Listing.photos), selectinload(Listing.owner))
             .offset((page - 1) * size)
             .limit(size)
         )
