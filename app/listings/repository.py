@@ -212,10 +212,14 @@ class ListingRepository:
         """
         if not filters.q or self._dialect != "postgresql":
             return None
-        rank = text("ts_rank(search_vector, websearch_to_tsquery('french', :q))").bindparams(
-            q=filters.q
+        # ``text()`` yields a TextClause without ``.desc()``; bake the direction
+        # into the SQL so it can be used directly in ORDER BY.
+        rank_desc = text(
+            "ts_rank(search_vector, websearch_to_tsquery('french', :q)) DESC"
+        ).bindparams(q=filters.q)
+        return stmt.order_by(
+            rank_desc, Listing.published_at.desc(), Listing.created_at.desc()
         )
-        return stmt.order_by(rank.desc(), Listing.published_at.desc(), Listing.created_at.desc())
 
     async def list_published(
         self,

@@ -72,6 +72,10 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`${API_HOST:-api.localhost}`)"
       - "traefik.http.routers.api.entrypoints=web"
+      # Frontend calls http://api.localhost/api/* ; the FastAPI app serves routes
+      # at the root (/listings, /wilayas, /auth). Strip the /api prefix here.
+      - "traefik.http.routers.api.middlewares=api-stripprefix"
+      - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
       - "traefik.docker.network=seloger-network"
     networks:
