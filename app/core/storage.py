@@ -40,17 +40,28 @@ class StorageBackend(Protocol):
 
 
 class InMemoryStorage:
-    """Backend used in tests and local dev (no real S3)."""
+    """Backend used in tests and local dev (no real S3).
+
+    Bytes are kept in-process and served back over HTTP by the ``/media``
+    endpoint so uploaded photos are viewable in the browser during local dev.
+    """
 
     def __init__(self) -> None:
-        self.objects: dict[str, bytes] = {}
+        self.objects: dict[str, tuple[str, bytes]] = {}
+
+    def _media_url(self, key: str) -> str:
+        return f"{settings.media_base_url.rstrip('/')}/media/{key}"
 
     async def upload(self, key: str, data: bytes, content_type: str) -> str:
-        self.objects[key] = data
-        return f"memory://{key}"
+        self.objects[key] = (content_type, data)
+        return self._media_url(key)
+
+    def get(self, key: str) -> tuple[str, bytes] | None:
+        """Return ``(content_type, data)`` for a stored key, or ``None``."""
+        return self.objects.get(key)
 
     async def delete(self, url: str) -> None:
-        key = url.removeprefix("memory://")
+        key = url.rsplit("/media/", 1)[-1]
         self.objects.pop(key, None)
 
 

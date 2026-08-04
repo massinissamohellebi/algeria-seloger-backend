@@ -12,6 +12,7 @@ from app.core.database import engine
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging
 from app.listings.admin import router as admin_listings_router
+from app.listings.media import router as media_router
 from app.listings.router import router as listings_router
 from app.wilaya.router import router as wilayas_router
 
@@ -50,6 +51,7 @@ def create_app() -> FastAPI:
     app.include_router(listings_router)
     app.include_router(admin_listings_router)
     app.include_router(wilayas_router)
+    app.include_router(media_router)
 
     @app.get("/health", tags=["ops"])
     async def health() -> dict[str, str]:
