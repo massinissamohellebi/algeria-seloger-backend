@@ -8,7 +8,7 @@ from app.auth.exceptions import (
 )
 from app.auth.models import User
 from app.auth.repository import UserRepository
-from app.auth.schemas import Token, UserCreate
+from app.auth.schemas import Token, UserCreate, UserUpdate
 from app.core.security import (
     JWTError,
     create_access_token,
@@ -32,7 +32,25 @@ class AuthService:
             email=payload.email,
             hashed_password=hash_password(payload.password),
             full_name=payload.full_name,
+            phone=payload.phone,
+            account_type=payload.account_type,
         )
+
+    async def update_profile(self, user: User, payload: UserUpdate) -> User:
+        data = payload.model_dump(exclude_unset=True)
+        return await self.repository.update(user, data)
+
+    async def change_password(
+        self, user: User, current_password: str, new_password: str
+    ) -> None:
+        if not verify_password(current_password, user.hashed_password):
+            raise InvalidCredentialsError()
+        await self.repository.update(
+            user, {"hashed_password": hash_password(new_password)}
+        )
+
+    async def delete_account(self, user: User) -> None:
+        await self.repository.delete(user)
 
     async def login(self, email: str, password: str) -> Token:
         user = await self.repository.get_by_email(email)
