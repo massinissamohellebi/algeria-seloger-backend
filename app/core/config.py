@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     s3_secret_access_key: str | None = None
     s3_public_base_url: str | None = None
 
+    # Public base URL used to serve in-memory (dev) photo bytes over HTTP.
+    media_base_url: str = "http://api.localhost/api"
+
     max_photo_size_bytes: int = 5 * 1024 * 1024
     max_photos_per_listing: int = 20
 

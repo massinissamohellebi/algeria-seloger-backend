@@ -16,6 +16,8 @@ from app.listings.exceptions import (
 from app.listings.models import Listing, ListingPhoto, ListingStatus
 from app.listings.repository import ListingFilters, ListingRepository
 from app.listings.schemas import (
+    AdminListingPage,
+    AdminListingSummary,
     ListingCreate,
     ListingPage,
     ListingSummary,
@@ -40,6 +42,14 @@ def _cover_url(photos: list[ListingPhoto]) -> str | None:
 def _to_summary(listing: Listing) -> ListingSummary:
     summary = ListingSummary.model_validate(listing)
     summary.cover_url = _cover_url(listing.photos)
+    return summary
+
+
+def _to_admin_summary(listing: Listing) -> AdminListingSummary:
+    summary = AdminListingSummary.model_validate(listing)
+    summary.cover_url = _cover_url(listing.photos)
+    summary.owner_name = listing.owner.full_name
+    summary.owner_email = listing.owner.email
     return summary
 
 
@@ -128,10 +138,12 @@ class ListingService:
             listing.published_at = datetime.now(UTC)
         return await self.repository.update(listing, {})
 
-    async def list_all(self, status: ListingStatus | None, page: int, size: int) -> ListingPage:
+    async def list_all(
+        self, status: ListingStatus | None, page: int, size: int
+    ) -> AdminListingPage:
         listings, total = await self.repository.list_all(status, page, size)
-        return ListingPage(
-            items=[_to_summary(item) for item in listings],
+        return AdminListingPage(
+            items=[_to_admin_summary(item) for item in listings],
             total=total,
             page=page,
             size=size,

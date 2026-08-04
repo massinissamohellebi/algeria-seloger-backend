@@ -14,6 +14,10 @@ from app.listings.models import (
 
 class SortOption(enum.StrEnum):
     newest = "newest"
+    # Spec alias for the default recency sort (published_at desc). Kept alongside
+    # `newest` so the existing frontend contract (`newest`) is not broken while
+    # accepting the spec's canonical `date_desc` value too.
+    date_desc = "date_desc"
     price_asc = "price_asc"
     price_desc = "price_desc"
     surface_asc = "surface_asc"
@@ -120,6 +124,21 @@ class ListingSummary(BaseModel):
 
 class ListingPage(BaseModel):
     items: list[ListingSummary]
+    total: int
+    page: int
+    size: int
+    pages: int
+
+
+class AdminListingSummary(ListingSummary):
+    """Listing summary enriched with owner info for the moderation panel."""
+
+    owner_name: str | None = None
+    owner_email: str | None = None
+
+
+class AdminListingPage(BaseModel):
+    items: list[AdminListingSummary]
     total: int
     page: int
     size: int

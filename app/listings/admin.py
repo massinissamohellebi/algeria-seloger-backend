@@ -9,8 +9,8 @@ from app.core.database import get_db
 from app.listings.dependencies import get_listing_service
 from app.listings.models import ListingStatus
 from app.listings.schemas import (
+    AdminListingPage,
     AdminStatusUpdate,
-    ListingPage,
     ListingRead,
 )
 from app.listings.service import ListingService
@@ -21,14 +21,14 @@ ServiceDep = Annotated[ListingService, Depends(get_listing_service)]
 SessionDep = Annotated[AsyncSession, Depends(get_db)]
 
 
-@router.get("", response_model=ListingPage)
+@router.get("", response_model=AdminListingPage)
 async def admin_list_listings(
     _admin: AdminUser,
     service: ServiceDep,
     status: ListingStatus | None = None,
     page: Annotated[int, Query(ge=1)] = 1,
     size: Annotated[int, Query(ge=1, le=100)] = 20,
-) -> ListingPage:
+) -> AdminListingPage:
     return await service.list_all(status, page, size)
 
 
