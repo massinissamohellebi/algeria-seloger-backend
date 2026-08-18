@@ -14,6 +14,7 @@ from app.core.logging import configure_logging
 from app.listings.admin import router as admin_listings_router
 from app.listings.media import router as media_router
 from app.listings.router import router as listings_router
+from app.users.router import router as users_router
 from app.wilaya.router import router as wilayas_router
 
 configure_logging("DEBUG" if settings.debug else "INFO")
@@ -48,6 +49,7 @@ def create_app() -> FastAPI:
         return response
 
     app.include_router(auth_router)
+    app.include_router(users_router)
     app.include_router(listings_router)
     app.include_router(admin_listings_router)
     app.include_router(wilayas_router)

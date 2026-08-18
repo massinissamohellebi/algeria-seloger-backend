@@ -29,6 +29,8 @@ class UserRead(BaseModel):
     is_active: bool
     is_admin: bool
     is_email_verified: bool = False
+    language: str = "fr"
+    email_notifications: bool = True
     created_at: datetime
 
 
