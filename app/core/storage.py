@@ -70,13 +70,23 @@ class S3Storage:
 
     def __init__(self) -> None:
         import boto3  # imported lazily so tests/dev don't require boto3
+        from botocore.config import Config
 
+        # Path-style addressing so S3-compatible endpoints (LocalStack, MinIO)
+        # resolve as {endpoint}/{bucket}/{key} instead of a virtual-host subdomain
+        # that has no DNS entry in dev.
+        client_config = (
+            Config(s3={"addressing_style": "path"})
+            if settings.s3_endpoint_url
+            else None
+        )
         self._client = boto3.client(
             "s3",
             region_name=settings.s3_region,
             endpoint_url=settings.s3_endpoint_url,
             aws_access_key_id=settings.s3_access_key_id,
             aws_secret_access_key=settings.s3_secret_access_key,
+            config=client_config,
         )
         self._bucket = settings.s3_bucket
 

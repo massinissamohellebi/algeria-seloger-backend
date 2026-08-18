@@ -12,9 +12,24 @@ from sqlalchemy.ext.asyncio import (
 # Import models before create_all so all tables are registered on Base.metadata.
 import app.models  # noqa: F401
 from app.core.database import Base, get_db
+from app.core.mailer import get_mailer
 from app.main import app
+from tests._mailer import capturing_mailer
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+
+
+@pytest.fixture(autouse=True)
+def mailer():
+    """Install the capturing mailer for every test and reset it beforehand.
+
+    Autouse so any endpoint that sends email (register, forgot-password) hits
+    the capture instead of SMTP; requestable by name for assertions.
+    """
+    capturing_mailer.clear()
+    app.dependency_overrides[get_mailer] = lambda: capturing_mailer
+    yield capturing_mailer
+    app.dependency_overrides.pop(get_mailer, None)
 
 
 @pytest_asyncio.fixture

@@ -63,10 +63,29 @@ services:
     container_name: seloger-backend
     env_file:
       - .env
+    # Local-dev wiring for the auxiliary services. Kept here (not in .env) so a
+    # host-side `pytest` still uses the console mailer + in-memory storage.
+    environment:
+      MAILER_BACKEND: smtp
+      SMTP_HOST: maildev
+      SMTP_PORT: "1025"
+      MAIL_FROM: no-reply@algeria-seloger.dz
+      FRONTEND_BASE_URL: http://algeria-seloger.localhost
+      S3_BUCKET: seloger-photos
+      S3_REGION: us-east-1
+      S3_ENDPOINT_URL: http://localstack:4566
+      S3_ACCESS_KEY_ID: test
+      S3_SECRET_ACCESS_KEY: test
+      # Browser-reachable base URL for uploaded photos (LocalStack on the host).
+      S3_PUBLIC_BASE_URL: http://localhost:4566/seloger-photos
     volumes:
       - ./alembic/versions:/app/alembic/versions
     depends_on:
       db:
+        condition: service_healthy
+      maildev:
+        condition: service_started
+      localstack:
         condition: service_healthy
     labels:
       - "traefik.enable=true"
@@ -78,6 +97,50 @@ services:
       - "traefik.http.middlewares.api-stripprefix.stripprefix.prefixes=/api"
       - "traefik.http.services.api.loadbalancer.server.port=8000"
       - "traefik.docker.network=seloger-network"
+    networks:
+      - seloger-network
+
+  maildev:
+    image: maildev/maildev:latest
+    container_name: seloger-maildev
+    environment:
+      MAILDEV_SMTP_PORT: "1025"
+      MAILDEV_WEB_PORT: "1080"
+    # The image's built-in healthcheck probes a stale path and reports a
+    # misleading "unhealthy" even though SMTP + the web UI work. Disable it;
+    # the backend only waits for `service_started`.
+    healthcheck:
+      disable: true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.maildev.rule=Host(`${MAILDEV_HOST:-maildev.localhost}`)"
+      - "traefik.http.routers.maildev.entrypoints=web"
+      - "traefik.http.services.maildev.loadbalancer.server.port=1080"
+      - "traefik.docker.network=seloger-network"
+    networks:
+      - seloger-network
+
+  localstack:
+    # Pinned to the 3.x community line: the rolling `:latest` now demands a Pro
+    # license token and exits. S3 is a free/community service on 3.x.
+    image: localstack/localstack:3
+    container_name: seloger-localstack
+    environment:
+      SERVICES: s3
+      DEBUG: "0"
+    ports:
+      # Exposed on the host so the browser can GET uploaded photos directly.
+      - "4566:4566"
+    volumes:
+      - ./localstack/init:/etc/localstack/init/ready.d:ro
+      - ./data/localstack:/var/lib/localstack
+    healthcheck:
+      test: ["CMD-SHELL", "awslocal s3 ls s3://seloger-photos || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    labels:
+      - "traefik.enable=false"
     networks:
       - seloger-network
 

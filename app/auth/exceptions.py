@@ -1,4 +1,11 @@
-from app.core.exceptions import ConflictError, NotFoundError, UnauthorizedError
+from app.core.exceptions import (
+    BadRequestError,
+    ConflictError,
+    ForbiddenError,
+    NotFoundError,
+    TooManyRequestsError,
+    UnauthorizedError,
+)
 
 
 class EmailAlreadyExistsError(ConflictError):
@@ -21,6 +28,32 @@ class InactiveUserError(UnauthorizedError):
     message = "User account is inactive."
 
 
+class EmailNotVerifiedError(ForbiddenError):
+    code = "email_not_verified"
+    message = "Please verify your email address before signing in."
+
+
 class UserNotFoundError(NotFoundError):
     code = "user_not_found"
     message = "User not found."
+
+
+class InvalidVerificationTokenError(BadRequestError):
+    # Generic on purpose: never reveals expired vs unknown vs consumed.
+    code = "invalid_verification_token"
+    message = "This verification link is invalid or has expired."
+
+
+class InvalidResetTokenError(BadRequestError):
+    code = "invalid_reset_token"
+    message = "This reset link is invalid or has expired."
+
+
+class InvalidRefreshTokenError(UnauthorizedError):
+    code = "invalid_refresh_token"
+    message = "The refresh token is invalid, expired or revoked."
+
+
+class RateLimitedError(TooManyRequestsError):
+    code = "rate_limited"
+    message = "Too many attempts. Please wait before trying again."

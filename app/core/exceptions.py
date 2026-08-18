@@ -19,6 +19,12 @@ class AppError(Exception):
         super().__init__(self.message)
 
 
+class BadRequestError(AppError):
+    status_code = status.HTTP_400_BAD_REQUEST
+    code = "bad_request"
+    message = "The request is invalid."
+
+
 class NotFoundError(AppError):
     status_code = status.HTTP_404_NOT_FOUND
     code = "not_found"
@@ -43,6 +49,18 @@ class ForbiddenError(AppError):
     message = "You do not have permission to perform this action."
 
 
+class TooManyRequestsError(AppError):
+    status_code = status.HTTP_429_TOO_MANY_REQUESTS
+    code = "too_many_requests"
+    message = "Too many attempts. Please try again later."
+
+    def __init__(
+        self, message: str | None = None, *, retry_after: int | None = None
+    ) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
 def _error_body(code: str, message: str) -> dict:
     return {"error": {"code": code, "message": message}}
 
@@ -51,6 +69,8 @@ async def app_error_handler(request: Request, exc: AppError) -> JSONResponse:
     headers = {}
     if isinstance(exc, UnauthorizedError):
         headers["WWW-Authenticate"] = "Bearer"
+    if isinstance(exc, TooManyRequestsError) and exc.retry_after is not None:
+        headers["Retry-After"] = str(exc.retry_after)
     return JSONResponse(
         status_code=exc.status_code,
         content=_error_body(exc.code, exc.message),
