@@ -9,6 +9,7 @@ from app.auth.repository import UserRepository
 from app.auth.service import AuthService
 from app.core.database import get_db
 from app.core.exceptions import AppError, ForbiddenError
+from app.core.mailer import Mailer, get_mailer
 
 bearer_scheme = HTTPBearer(auto_error=True)
 optional_bearer_scheme = HTTPBearer(auto_error=False)
@@ -16,8 +17,9 @@ optional_bearer_scheme = HTTPBearer(auto_error=False)
 
 def get_auth_service(
     session: Annotated[AsyncSession, Depends(get_db)],
+    mailer: Annotated[Mailer, Depends(get_mailer)],
 ) -> AuthService:
-    return AuthService(UserRepository(session))
+    return AuthService(UserRepository(session), mailer=mailer)
 
 
 async def get_current_user(

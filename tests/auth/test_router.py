@@ -19,8 +19,10 @@ async def test_register_duplicate_returns_409(client, user_payload):
 
 
 @pytest.mark.asyncio
-async def test_login_and_me_flow(client, user_payload):
+async def test_login_and_me_flow(client, user_payload, mailer):
     await client.post("/auth/register", json=user_payload)
+    # Login requires a verified email — confirm it via the captured token first.
+    await client.post("/auth/verify-email", json={"token": mailer.last_token()})
     login = await client.post(
         "/auth/login",
         json={"email": user_payload["email"], "password": user_payload["password"]},

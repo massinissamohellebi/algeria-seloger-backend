@@ -26,7 +26,23 @@ class Settings(BaseSettings):
     # JWT / Auth
     secret_key: str = Field(default="change-me")
     algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
+    access_token_expire_minutes: int = 15
+    refresh_token_expire_days: int = 30
+    email_verification_ttl_hours: int = 24
+    password_reset_ttl_hours: int = 1
+
+    # Rate limiting (login + forgot-password): max attempts per sliding window.
+    login_rate_limit_max_attempts: int = 5
+    login_rate_limit_window_minutes: int = 15
+
+    # Mailer. `console` logs emails (dev/tests); `smtp` sends via an SMTP server
+    # (MailDev locally, a transactional provider in prod).
+    mailer_backend: str = "console"
+    mail_from: str = "no-reply@algeria-seloger.dz"
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    # Base URL of the frontend, used to build verification / reset links.
+    frontend_base_url: str = "http://algeria-seloger.localhost:5173"
 
     # CORS
     cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:3000"])

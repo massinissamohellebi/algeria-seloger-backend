@@ -1,5 +1,7 @@
 import pytest
 
+from tests._mailer import capturing_mailer
+
 
 def listing_payload(**overrides) -> dict:
     payload = {
@@ -24,6 +26,9 @@ def listing_payload(**overrides) -> dict:
 async def auth_headers(client, email: str = "owner@example.com") -> dict:
     creds = {"email": email, "password": "supersecret123", "full_name": "Owner"}
     await client.post("/auth/register", json=creds)
+    # Login now requires a verified email: confirm it via the captured token.
+    verify_token = capturing_mailer.token_for(email)
+    await client.post("/auth/verify-email", json={"token": verify_token})
     login = await client.post("/auth/login", json={"email": email, "password": creds["password"]})
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}

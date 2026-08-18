@@ -34,13 +34,29 @@ async def test_register_duplicate_email_raises(service, db_session):
         await service.register(payload)
 
 
+async def _register_verified(service, db_session, email, password):
+    user = await service.register(UserCreate(email=email, password=password))
+    await service.repository.update(user, {"is_email_verified": True})
+    await db_session.commit()
+    return user
+
+
 @pytest.mark.asyncio
 async def test_login_success_returns_token(service, db_session):
-    await service.register(UserCreate(email="log@example.com", password="password123"))
-    await db_session.commit()
+    await _register_verified(service, db_session, "log@example.com", "password123")
     token = await service.login("log@example.com", "password123")
     assert token.access_token
     assert token.token_type == "bearer"
+
+
+@pytest.mark.asyncio
+async def test_login_unverified_email_raises(service, db_session):
+    from app.auth.exceptions import EmailNotVerifiedError
+
+    await service.register(UserCreate(email="unv@example.com", password="password123"))
+    await db_session.commit()
+    with pytest.raises(EmailNotVerifiedError):
+        await service.login("unv@example.com", "password123")
 
 
 @pytest.mark.asyncio
@@ -53,8 +69,7 @@ async def test_login_wrong_password_raises(service, db_session):
 
 @pytest.mark.asyncio
 async def test_get_current_user_roundtrip(service, db_session):
-    await service.register(UserCreate(email="cur@example.com", password="password123"))
-    await db_session.commit()
+    await _register_verified(service, db_session, "cur@example.com", "password123")
     token = await service.login("cur@example.com", "password123")
     user = await service.get_current_user(token.access_token)
     assert user.email == "cur@example.com"
