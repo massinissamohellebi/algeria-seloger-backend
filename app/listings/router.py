@@ -5,7 +5,10 @@ from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, OptionalCurrentUser
+from app.auth.models import User
 from app.core.database import get_db
+from app.favorites.dependencies import get_favorite_repository
+from app.favorites.repository import FavoriteRepository
 from app.listings.dependencies import get_listing_service, get_photo_service
 from app.listings.models import PropertyType, TransactionType
 from app.listings.repository import ListingFilters
@@ -25,11 +28,27 @@ router = APIRouter(prefix="/listings", tags=["listings"])
 ServiceDep = Annotated[ListingService, Depends(get_listing_service)]
 PhotoServiceDep = Annotated[PhotoService, Depends(get_photo_service)]
 SessionDep = Annotated[AsyncSession, Depends(get_db)]
+FavRepoDep = Annotated[FavoriteRepository, Depends(get_favorite_repository)]
+
+
+async def _mark_favorites(
+    items: list[ListingSummary],
+    user: User | None,
+    favorites: FavoriteRepository,
+) -> None:
+    """Batch-resolve `is_favorited` for the authed caller (no N+1)."""
+    if user is None or not items:
+        return
+    favorited = await favorites.favorited_ids(user.id, [item.id for item in items])
+    for item in items:
+        item.is_favorited = item.id in favorited
 
 
 @router.get("", response_model=ListingPage)
 async def list_listings(
     service: ServiceDep,
+    current_user: OptionalCurrentUser,
+    favorites: FavRepoDep,
     q: Annotated[str | None, Query(max_length=200)] = None,
     transaction_type: TransactionType | None = None,
     property_type: Annotated[list[PropertyType] | None, Query()] = None,
@@ -60,7 +79,9 @@ async def list_listings(
         amenities=[a for a in amenities if a.strip()] if amenities else None,
         q=q.strip() if q and q.strip() else None,
     )
-    return await service.list_published(filters, sort, page, size)
+    result = await service.list_published(filters, sort, page, size)
+    await _mark_favorites(result.items, current_user, favorites)
+    return result
 
 
 @router.get("/mine", response_model=list[ListingSummary])
@@ -88,9 +109,13 @@ async def get_listing(
     listing_id: uuid.UUID,
     current_user: OptionalCurrentUser,
     service: ServiceDep,
+    favorites: FavRepoDep,
 ) -> ListingRead:
     listing = await service.get_listing(listing_id, current_user)
-    return ListingRead.model_validate(listing)
+    read = ListingRead.model_validate(listing)
+    if current_user is not None:
+        read.is_favorited = await favorites.exists(current_user.id, listing.id)
+    return read
 
 
 @router.patch("/{listing_id}", response_model=ListingRead)
