@@ -20,7 +20,10 @@ class UserRead(BaseModel):
     full_name: str | None
     phone: str | None = None
     avatar_url: str | None = None
+    # `wilaya` is the localised name (read-only, from the FK); `wilaya_code` is
+    # the editable reference code.
     wilaya: str | None = None
+    wilaya_code: str | None = None
     bio: str | None = None
     account_type: str = "particulier"
     # Canonical role (particulier/agence/admin), derived from account_type +
@@ -39,7 +42,7 @@ class UserUpdate(BaseModel):
 
     full_name: str | None = Field(default=None, max_length=255)
     phone: str | None = Field(default=None, max_length=32)
-    wilaya: str | None = Field(default=None, max_length=100)
+    wilaya_code: str | None = Field(default=None, min_length=2, max_length=2)
     bio: str | None = Field(default=None, max_length=500)
     account_type: str | None = Field(default=None, max_length=20)
 

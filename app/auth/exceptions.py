@@ -28,6 +28,16 @@ class InactiveUserError(UnauthorizedError):
     message = "User account is inactive."
 
 
+class AccountSuspendedError(ForbiddenError):
+    code = "account_suspended"
+    message = "This account is suspended."
+
+
+class AccountBannedError(ForbiddenError):
+    code = "account_banned"
+    message = "This account has been banned."
+
+
 class EmailNotVerifiedError(ForbiddenError):
     code = "email_not_verified"
     message = "Please verify your email address before signing in."

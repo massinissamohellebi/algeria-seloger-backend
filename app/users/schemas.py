@@ -11,7 +11,7 @@ class ProfileUpdate(BaseModel):
 
     full_name: str | None = Field(default=None, max_length=255)
     phone: str | None = Field(default=None, max_length=32)
-    wilaya: str | None = Field(default=None, max_length=100)
+    wilaya_code: str | None = Field(default=None, min_length=2, max_length=2)
     bio: str | None = Field(default=None, max_length=500)
 
 
