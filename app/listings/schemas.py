@@ -46,6 +46,13 @@ class ListingBase(BaseModel):
     bathrooms: int | None = Field(default=None, ge=0)
     floor: int | None = None
     furnished: bool = False
+    # Vacation-rental fields (used when transaction_type = vacances).
+    max_guests: int | None = Field(default=None, ge=1, le=50)
+    beds: int | None = Field(default=None, ge=0)
+    pets_allowed: bool | None = None
+    checkin_from: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    checkin_to: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    checkout_before: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
     amenities: list[str] = Field(default_factory=list)
     wilaya: str = Field(min_length=1, max_length=100)
     city: str | None = Field(default=None, max_length=100)
@@ -76,6 +83,12 @@ class ListingUpdate(BaseModel):
     bathrooms: int | None = Field(default=None, ge=0)
     floor: int | None = None
     furnished: bool | None = None
+    max_guests: int | None = Field(default=None, ge=1, le=50)
+    beds: int | None = Field(default=None, ge=0)
+    pets_allowed: bool | None = None
+    checkin_from: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    checkin_to: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
+    checkout_before: str | None = Field(default=None, pattern=r"^\d{2}:\d{2}$")
     amenities: list[str] | None = None
     wilaya: str | None = Field(default=None, min_length=1, max_length=100)
     city: str | None = Field(default=None, max_length=100)
@@ -99,6 +112,9 @@ class ListingRead(ListingBase):
     photos: list[PhotoRead] = Field(default_factory=list)
     # Resolved per-request for the authenticated caller (epic 11).
     is_favorited: bool = False
+    # Review aggregate (epic vacances), resolved per-request on detail.
+    rating_avg: float | None = None
+    review_count: int = 0
 
 
 class ListingSummary(BaseModel):
