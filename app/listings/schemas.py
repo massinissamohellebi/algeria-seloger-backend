@@ -97,6 +97,8 @@ class ListingRead(ListingBase):
     updated_at: datetime
     published_at: datetime | None
     photos: list[PhotoRead] = Field(default_factory=list)
+    # Resolved per-request for the authenticated caller (epic 11).
+    is_favorited: bool = False
 
 
 class ListingSummary(BaseModel):
@@ -120,6 +122,8 @@ class ListingSummary(BaseModel):
     published_at: datetime | None
     created_at: datetime
     cover_url: str | None = None
+    # Resolved per-request for the authenticated caller (epic 11).
+    is_favorited: bool = False
 
 
 class ListingPage(BaseModel):

@@ -10,6 +10,7 @@ from app.auth.models import (  # noqa: F401
     RefreshToken,
     User,
 )
+from app.favorites.models import Favorite  # noqa: F401
 from app.listings.models import (  # noqa: F401
     Listing,
     ListingPhoto,
