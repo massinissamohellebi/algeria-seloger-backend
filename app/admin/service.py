@@ -16,6 +16,7 @@ from app.auth.exceptions import UserNotFoundError
 from app.auth.models import User, UserStatus
 from app.auth.repository import RefreshTokenRepository, UserRepository
 from app.listings.models import Listing
+from app.messaging.models import Conversation
 
 
 class AdminService:
@@ -98,6 +99,7 @@ class AdminService:
 
         listings = await self.repo.listings_per_day(start, end)
         reports = await self.repo.reports_per_day(start, end)
+        conversations = await self.repo.conversations_per_day(start, end)
 
         return AnalyticsResponse(
             date_from=date_from,
@@ -106,10 +108,11 @@ class AdminService:
             mau=mau,
             total_users=await self.repo.count(User),
             total_listings=await self.repo.count(Listing),
-            # No messaging feature yet (epic C1) — conversations stay at zero.
-            total_conversations=0,
+            total_conversations=await self.repo.count(Conversation),
             listings_per_day=[TimePoint(date=d, count=c) for d, c in listings],
-            conversations_per_day=[],
+            conversations_per_day=[
+                TimePoint(date=d, count=c) for d, c in conversations
+            ],
             reports_per_day=[TimePoint(date=d, count=c) for d, c in reports],
             top_report_reasons=[
                 LabelCount(label=label, count=count)

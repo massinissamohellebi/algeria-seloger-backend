@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.models import User, UserStatus
 from app.listings.models import Listing
+from app.messaging.models import Conversation
 from app.reports.models import Report
 
 
@@ -92,6 +93,11 @@ class AdminRepository:
 
     async def reports_per_day(self, start: datetime, end: datetime):
         return await self._series(Report.id, Report.created_at, start, end)
+
+    async def conversations_per_day(self, start: datetime, end: datetime):
+        return await self._series(
+            Conversation.id, Conversation.created_at, start, end
+        )
 
     async def top_report_reasons(self, limit: int = 5):
         result = await self.session.execute(

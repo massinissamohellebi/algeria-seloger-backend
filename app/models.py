@@ -19,6 +19,7 @@ from app.listings.models import (  # noqa: F401
     PropertyType,
     TransactionType,
 )
+from app.messaging.models import Conversation, Message  # noqa: F401
 from app.reference.models import (  # noqa: F401
     ReportReasonRef,
     ReportStatusRef,
