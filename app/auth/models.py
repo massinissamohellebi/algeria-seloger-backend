@@ -11,6 +11,7 @@ from sqlalchemy import (
     Text,
     false,
     func,
+    true,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -37,6 +38,14 @@ class User(Base):
     )
     is_email_verified: Mapped[bool] = mapped_column(
         Boolean, default=False, server_default=false(), nullable=False
+    )
+    # Preferences (epic 9). Language is an allow-listed code (fr/en/ar);
+    # email_notifications drives future transactional/notification emails.
+    language: Mapped[str] = mapped_column(
+        String(2), default="fr", server_default="fr", nullable=False
+    )
+    email_notifications: Mapped[bool] = mapped_column(
+        Boolean, default=True, server_default=true(), nullable=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False

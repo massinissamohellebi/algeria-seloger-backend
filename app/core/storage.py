@@ -19,13 +19,21 @@ class StorageError(Exception):
     """Raised when the storage backend fails to store or delete an object."""
 
 
+_IMAGE_EXTENSIONS = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+}
+
+
 def build_object_key(listing_id: uuid.UUID, content_type: str) -> str:
-    ext = {
-        "image/jpeg": "jpg",
-        "image/png": "png",
-        "image/webp": "webp",
-    }.get(content_type, "bin")
+    ext = _IMAGE_EXTENSIONS.get(content_type, "bin")
     return f"listings/{listing_id}/{uuid.uuid4()}.{ext}"
+
+
+def build_avatar_key(user_id: uuid.UUID, content_type: str) -> str:
+    ext = _IMAGE_EXTENSIONS.get(content_type, "bin")
+    return f"avatars/{user_id}/{uuid.uuid4()}.{ext}"
 
 
 @runtime_checkable
