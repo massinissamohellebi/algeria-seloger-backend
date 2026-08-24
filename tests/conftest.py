@@ -37,6 +37,26 @@ async def db_engine():
     engine = create_async_engine(TEST_DATABASE_URL, future=True)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Seed the reference (lookup) tables that status/reason FKs point to,
+        # mirroring what the Alembic migration does in real environments.
+        from app.reference.models import (
+            REPORT_REASON_SEED,
+            REPORT_STATUS_SEED,
+            USER_STATUS_SEED,
+            ReportReasonRef,
+            ReportStatusRef,
+            UserStatusRef,
+        )
+
+        for model, seed in (
+            (UserStatusRef, USER_STATUS_SEED),
+            (ReportStatusRef, REPORT_STATUS_SEED),
+            (ReportReasonRef, REPORT_REASON_SEED),
+        ):
+            await conn.execute(
+                model.__table__.insert(),
+                [{"code": code, "label": label} for code, label in seed],
+            )
     yield engine
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

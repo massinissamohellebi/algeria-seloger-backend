@@ -1,7 +1,9 @@
+import enum
 import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    CHAR,
     UUID,
     Boolean,
     DateTime,
@@ -13,9 +15,19 @@ from sqlalchemy import (
     func,
     true,
 )
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
+from app.reference.models import UserStatusRef
+from app.wilaya.models import Wilaya
+
+
+class UserStatus(enum.StrEnum):
+    """Moderation status of an account (epic 10)."""
+
+    active = "active"
+    suspended = "suspended"
+    banned = "banned"
 
 
 class User(Base):
@@ -26,7 +38,10 @@ class User(Base):
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
     full_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
     phone: Mapped[str | None] = mapped_column(String(32), nullable=True)
-    wilaya: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    wilaya_code: Mapped[str | None] = mapped_column(
+        CHAR(2), ForeignKey("wilayas.code"), nullable=True
+    )
+    wilaya_ref: Mapped["Wilaya | None"] = relationship(lazy="selectin")
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(512), nullable=True)
     account_type: Mapped[str] = mapped_column(
@@ -47,9 +62,28 @@ class User(Base):
     email_notifications: Mapped[bool] = mapped_column(
         Boolean, default=True, server_default=true(), nullable=False
     )
+    # Moderation status (epic 10): active / suspended / banned — FK to the
+    # user_statuses reference table. Suspended is time-boxed via
+    # `suspended_until`; banned is permanent.
+    status: Mapped[str] = mapped_column(
+        String(20),
+        ForeignKey("user_statuses.code"),
+        default="active",
+        server_default="active",
+        nullable=False,
+    )
+    status_ref: Mapped["UserStatusRef"] = relationship(lazy="selectin")
+    suspended_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
+
+    @property
+    def wilaya(self) -> str | None:
+        """Localised wilaya name (FR) resolved via the FK, for read payloads."""
+        return self.wilaya_ref.name_fr if self.wilaya_ref else None
 
     @property
     def role(self) -> str:

@@ -2,6 +2,8 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 from app.auth.exceptions import (
+    AccountBannedError,
+    AccountSuspendedError,
     EmailAlreadyExistsError,
     EmailNotVerifiedError,
     InactiveUserError,
@@ -16,6 +18,7 @@ from app.auth.models import (
     EmailVerificationToken,
     PasswordResetToken,
     User,
+    UserStatus,
 )
 from app.auth.repository import (
     EmailVerificationTokenRepository,
@@ -184,6 +187,7 @@ class AuthService:
         # first (the client offers to resend the verification link).
         if not user.is_email_verified:
             raise EmailNotVerifiedError()
+        _assert_not_moderated(user)
         return await self._issue_token_pair(user)
 
     async def refresh(self, refresh_token: str) -> Token:
@@ -261,6 +265,9 @@ class AuthService:
         user = await self._resolve_user_from_token(token)
         if not user.is_active:
             raise InactiveUserError()
+        # Banned/suspended accounts are rejected on every authed path, so an
+        # existing access token can't be used to keep acting after a ban.
+        _assert_not_moderated(user)
         return user
 
     async def _resolve_user_from_token(self, token: str) -> User:
@@ -269,6 +276,16 @@ class AuthService:
         if user is None:
             raise InvalidTokenError()
         return user
+
+
+def _assert_not_moderated(user: User) -> None:
+    """Block banned users always, and suspended users until their date."""
+    if user.status == UserStatus.banned:
+        raise AccountBannedError()
+    if user.status == UserStatus.suspended and (
+        user.suspended_until is None or _aware(user.suspended_until) > _now()
+    ):
+        raise AccountSuspendedError()
 
 
 def _login_identifier(ip: str | None, email: str) -> str:

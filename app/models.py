@@ -19,4 +19,10 @@ from app.listings.models import (  # noqa: F401
     PropertyType,
     TransactionType,
 )
+from app.reference.models import (  # noqa: F401
+    ReportReasonRef,
+    ReportStatusRef,
+    UserStatusRef,
+)
+from app.reports.models import Report  # noqa: F401
 from app.wilaya.models import Wilaya  # noqa: F401

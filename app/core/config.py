@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Rate limiting (login + forgot-password): max attempts per sliding window.
     login_rate_limit_max_attempts: int = 5
     login_rate_limit_window_minutes: int = 15
+    # Rate limiting for report creation (per IP), to blunt abuse.
+    report_rate_limit_max_attempts: int = 10
+    report_rate_limit_window_minutes: int = 60
 
     # Mailer. `console` logs emails (dev/tests); `smtp` sends via an SMTP server
     # (MailDev locally, a transactional provider in prod).
