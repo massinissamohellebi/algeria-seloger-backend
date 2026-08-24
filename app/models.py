@@ -20,10 +20,13 @@ from app.listings.models import (  # noqa: F401
     TransactionType,
 )
 from app.messaging.models import Conversation, Message  # noqa: F401
+from app.notifications.models import Notification  # noqa: F401
 from app.reference.models import (  # noqa: F401
     ReportReasonRef,
     ReportStatusRef,
     UserStatusRef,
 )
 from app.reports.models import Report  # noqa: F401
+from app.reservations.models import Reservation  # noqa: F401
+from app.reviews.models import Review  # noqa: F401
 from app.wilaya.models import Wilaya  # noqa: F401

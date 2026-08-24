@@ -22,6 +22,8 @@ from app.listings.schemas import (
     SortOption,
 )
 from app.listings.service import ListingService, PhotoService
+from app.reviews.dependencies import get_review_service
+from app.reviews.service import ReviewService
 
 router = APIRouter(prefix="/listings", tags=["listings"])
 
@@ -29,6 +31,7 @@ ServiceDep = Annotated[ListingService, Depends(get_listing_service)]
 PhotoServiceDep = Annotated[PhotoService, Depends(get_photo_service)]
 SessionDep = Annotated[AsyncSession, Depends(get_db)]
 FavRepoDep = Annotated[FavoriteRepository, Depends(get_favorite_repository)]
+ReviewServiceDep = Annotated[ReviewService, Depends(get_review_service)]
 
 
 async def _mark_favorites(
@@ -110,11 +113,15 @@ async def get_listing(
     current_user: OptionalCurrentUser,
     service: ServiceDep,
     favorites: FavRepoDep,
+    reviews: ReviewServiceDep,
 ) -> ListingRead:
     listing = await service.get_listing(listing_id, current_user)
     read = ListingRead.model_validate(listing)
     if current_user is not None:
         read.is_favorited = await favorites.exists(current_user.id, listing.id)
+    average, count = await reviews.aggregate(listing.id)
+    read.rating_avg = round(average, 2) if average is not None else None
+    read.review_count = count
     return read
 
 

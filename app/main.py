@@ -17,8 +17,11 @@ from app.listings.admin import router as admin_listings_router
 from app.listings.media import router as media_router
 from app.listings.router import router as listings_router
 from app.messaging.router import router as messaging_router
+from app.notifications.router import router as notifications_router
 from app.reports.router import admin_router as admin_reports_router
 from app.reports.router import router as reports_router
+from app.reservations.router import router as reservations_router
+from app.reviews.router import router as reviews_router
 from app.users.router import router as users_router
 from app.wilaya.router import router as wilayas_router
 
@@ -62,6 +65,9 @@ def create_app() -> FastAPI:
     app.include_router(admin_reports_router)
     app.include_router(admin_router)
     app.include_router(messaging_router)
+    app.include_router(reviews_router)
+    app.include_router(reservations_router)
+    app.include_router(notifications_router)
     app.include_router(wilayas_router)
     app.include_router(media_router)
 

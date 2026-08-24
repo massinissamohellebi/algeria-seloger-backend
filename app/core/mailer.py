@@ -80,6 +80,36 @@ def build_password_reset_email(link: str) -> tuple[str, str]:
     return subject, body
 
 
+def build_reservation_confirmed_email(
+    listing_title: str, check_in: str, check_out: str, guests: int
+) -> tuple[str, str]:
+    subject = f"Votre réservation est confirmée — {listing_title}"
+    body = (
+        "Bonne nouvelle ! L'hôte a confirmé votre réservation.\n\n"
+        f"Logement : {listing_title}\n"
+        f"Arrivée : {check_in}\n"
+        f"Départ : {check_out}\n"
+        f"Voyageurs : {guests}\n\n"
+        "Retrouvez le détail dans l'onglet Réservations de votre profil."
+    )
+    return subject, body
+
+
+def build_reservation_cancelled_email(
+    listing_title: str, check_in: str, check_out: str
+) -> tuple[str, str]:
+    subject = f"Votre réservation a été annulée — {listing_title}"
+    body = (
+        "Votre demande de réservation n'a pas pu être retenue.\n\n"
+        f"Logement : {listing_title}\n"
+        f"Arrivée : {check_in}\n"
+        f"Départ : {check_out}\n\n"
+        "Les dates demandées ne sont plus disponibles. "
+        "N'hésitez pas à explorer d'autres logements sur Algeria SeLoger."
+    )
+    return subject, body
+
+
 def get_mailer() -> Mailer:
     """FastAPI dependency returning the configured mailer backend."""
     if settings.mailer_backend == "console":

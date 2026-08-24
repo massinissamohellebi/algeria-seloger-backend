@@ -91,6 +91,14 @@ class Listing(Base):
     floor: Mapped[int | None] = mapped_column(Integer, nullable=True)
     furnished: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
+    # Vacation-rental fields (only meaningful when transaction_type = vacances).
+    max_guests: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    beds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    pets_allowed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    checkin_from: Mapped[str | None] = mapped_column(String(5), nullable=True)  # "14:00"
+    checkin_to: Mapped[str | None] = mapped_column(String(5), nullable=True)  # "20:00"
+    checkout_before: Mapped[str | None] = mapped_column(String(5), nullable=True)  # "11:00"
+
     amenities: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
 
     wilaya: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
